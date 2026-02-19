@@ -25,27 +25,35 @@ function App() {
   const dispatch = useDispatch();
   const userId = useTypedSelector(selectedUserId);
 
-  const { data, isLoading, isSuccess } = useVerifyUserQuery({ userId });
+  // ✅ Skip API call if userId is not present
+  const { data, isLoading, isSuccess } = useVerifyUserQuery(
+    { userId },
+    { skip: !userId }
+  );
 
   useEffect(() => {
+    if (!isSuccess || !data) return;
+
     const userData = localStorage.getItem("user");
-    const user = JSON.parse(userData!);
-    if (isSuccess) {
-      const updatedUser = {
-        ...user,
-        data: {
-          ...user.data,
-          user: {
-            ...user.data.user,
-            seenNotifications: data.data.seenNotifications,
-            unseenNotifications: data.data.unseenNotifications,
-          },
+    if (!userData) return;
+
+    const user = JSON.parse(userData);
+
+    const updatedUser = {
+      ...user,
+      data: {
+        ...user.data,
+        user: {
+          ...user.data.user,
+          seenNotifications: data.data.seenNotifications,
+          unseenNotifications: data.data.unseenNotifications,
         },
-      };
-      dispatch(setUser(updatedUser));
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-    }
-  }, [data]);
+      },
+    };
+
+    dispatch(setUser(updatedUser));
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  }, [data, isSuccess]);
 
   return (
     <>
@@ -68,7 +76,6 @@ function App() {
               </PublicRoutes>
             }
           />
-          {/* Protected Routes */}
           <Route
             path="/"
             element={
